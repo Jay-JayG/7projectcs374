@@ -31,11 +31,11 @@ void *myalloc(int size) {
     while (temp != NULL) {
         if (temp->in_use == 0 && temp->next != NULL && temp->size >= PADDED_SIZE(size)) {
             temp->in_use = 1;
-            return (void *)temp + PADDED_SIZE(sizeof(struct block));;
+            return (void *)((void *)temp + PADDED_SIZE(sizeof(struct block)));
         }
         if (temp->size > PADDED_SIZE(size + sizeof(struct block) + sizeof(Byte16)) && temp->in_use == 0) {
             struct block *new_node = (void *)temp + (PADDED_SIZE(size) + sizeof(struct block));
-            new_node->size = temp->size - (PADDED_SIZE(size) + sizeof(struct block)) ;
+            new_node->size = temp->size - (PADDED_SIZE(size) + sizeof(struct block));
             new_node->in_use = 0;
             temp->size = PADDED_SIZE(size);
             temp->in_use = 1;
@@ -45,17 +45,20 @@ void *myalloc(int size) {
             } else {
                 temp->next = new_node;
             }
-            return (void *)temp + PADDED_SIZE(sizeof(struct block));
+            return (void *)((void *)temp + PADDED_SIZE(sizeof(struct block)));
         }
         temp = temp->next;
         if (temp == NULL) {
             return NULL;
         }
     }
-    return (void *)temp + PADDED_SIZE(sizeof(struct block));
+    return (void *)((void *)temp + PADDED_SIZE(sizeof(struct block)));
 }
 
-void myfree() {
+void myfree(void *p) {
+    p -= PADDED_SIZE(sizeof(struct block));
+    struct block *header = (struct block *)p;
+    header->in_use = 0;
 }
 
 void print_data(void)
@@ -82,9 +85,12 @@ void print_data(void)
 }
 
 void main(void) {
-    myalloc(10); print_data();
-    myalloc(20); print_data();
-    myalloc(30); print_data();
-    myalloc(40); print_data();
-    myalloc(50); print_data();
+    void *p;
+
+    myalloc(10);     print_data();
+    p = myalloc(20); print_data();
+    myalloc(30);     print_data();
+    myfree(p);       print_data();
+    myalloc(40);     print_data();
+    myalloc(10);     print_data();
 }
